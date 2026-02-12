@@ -1,44 +1,31 @@
-# vue3-personalfourn-admin
+# Buss的个人博客
 
-This template should help get you started developing with Vue 3 in Vite.
+#### 介绍
+VUE 3轻量级个人博客，作者：图图大王
 
-## Recommended IDE Setup
+#### 技术栈
+- 前端：Vue 3 + vite + pinia，组件库使用 Element Plus
+- 部署：前端静态化后托管至 Gitee Pages
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+#### 安装教程
 
-## Recommended Browser Setup
+1. 克隆仓库
+   git clone https://gitee.com/图图大王/Buss的个人博客.git
+2. 安装依赖
+   cd vue3-personalfourn-admin
+   pnpm install
+3. 配置环境变量
+4. pnpm dev
+5. 访问 http://localhost:3000
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+#### 使用说明
 
-## Customize configuration
+1.  需要登录进入，默认用户【id：图图；密码：123456】。或者自行注册后自行跳转
+2.  可阅读、编辑文章
+3.  可修改个人信息
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+#### 声明
 
-## Project Setup
+1.  没有正经的后端接口，使用的模拟数据库和token
 
-```sh
-pnpm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
-pnpm dev
-```
-
-### Compile and Minify for Production
-
-```sh
-pnpm build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-pnpm lint
-```
