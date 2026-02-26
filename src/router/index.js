@@ -22,6 +22,15 @@ const router = createRouter({
           component: () => import('@/views/article/BlogDetails.vue')
         },
         {
+          path: '/article/add',
+          component: () => import('@/views/article/BlogAdd.vue')
+        },
+        {
+          path: '/article/edit/:id',
+          component: () => import('@/views/article/BlogAdd.vue'),
+          props: true
+        },
+        {
           path: '/user/change',
           component: () => import('@/views/user/UserChange.vue')
         },

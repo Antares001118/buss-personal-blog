@@ -2,14 +2,14 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BlogContainer from '@/components/BlogContainer.vue'
-import { getBlogListData } from '@/api/BlogData'
+import { useBlogStore } from '@/stores/blog'
 const route = useRoute()
 const BlogListData = ref([])
 const DetailData = ref([])
-const getBlogList = async() => {
+const getBlogList = () => {
   const id = route.params.id
-  const res = await getBlogListData()
-  BlogListData.value = res.data
+  const store = useBlogStore()
+  BlogListData.value = store.blogs
   DetailData.value = BlogListData.value.find(item => item.id == id)
 }
 getBlogList()

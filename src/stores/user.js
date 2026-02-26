@@ -1,109 +1,173 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import router from '@/router'
+import { userApi } from '@/api/UserData'
+import { ElMessage } from 'element-plus'
 
 export const useUserStore = defineStore('User', () => {
-  const user = ref(null)
+  const userInfo = ref(null)
   const token = ref(localStorage.getItem('token') || null)
+  const loading = ref(false)
 
-  // 模拟api延迟
-  const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+  // 初始化/获取用户信息（从localStorage恢复）
+  const initUserInfo = () => {
+    const userStored = localStorage.getItem('userInfo')
+    console.log('userStored:', userStored);
 
-  // 模拟的用户数据库
-  const mockUsers = ref(JSON.parse(localStorage.getItem('userList')) || [
-    { id: 1, username: '图图', password: '123456' },
-    { id: 2, username: 'WAY', password:'123456'},
-  ])
-  // 简单登录
-  // credentials,用户凭证
-  const login = async credentials => {
-    await delay(500) //模拟网络延迟
-    // 获取formModel表单
-    const { formModel } = credentials
-    console.log('formModel登录调用', formModel);
-    // 简单验证
-    const user = mockUsers.value.find(u =>
-      u.username === formModel.username && u.password === formModel.password
-    )
-
-    if (user) {
-      // 1. 生成模拟的token
-      token.value = 'mock-token-' + Date.now()
-      // 2. 准备好要存储的用户信息（移除敏感数据）
-      user.value = {...user, password:undefined }
-      // 3. 将上面的数据保存起来
-      localStorage.setItem('token', token.value)
-      localStorage.setItem('user', JSON.stringify(user.value))
-
-      router.push('/')
-      return { success: true }
-    } else {
-      return { success: false, error: '密码错误'}
+    if (userStored) {
+      try {
+        userInfo.value = JSON.parse(userStored)
+        console.log('userInfo.value:', userInfo);
+      } catch (e) {
+        console.error('解析用户信息失败', e)
+      }
     }
   }
 
-  // 简单注册
-  const register = async registrationData => {
-    await delay(500)
-    // 获取formModel表单
-    const { formModel } = registrationData
-
-    // 创建新用户
-    const newUser = {
-      id: mockUsers.value.length + 1,
-      username: formModel.value.username,
-      password: formModel.value.password
-    }
-    console.log('3. mockUsers.value 类型:', typeof mockUsers.value)
-    // 添加到模拟数据库
-    mockUsers.value.push(newUser)
-    localStorage.setItem('userList', JSON.stringify(mockUsers.value))
-    console.log('mockUsers添加成功', mockUsers);
-
-    // 注册成功后自动登录
-    token.value = 'mock-token-' + Date.now()
-    user.value = {
-      id: newUser.id,
-      username: newUser.username,
-      password: newUser.password
-     }
-
-    localStorage.setItem('token', token.value)
-    localStorage.setItem('user', JSON.stringify(user.value))
-
-    router.push('/')
-    return { success: true }
-  }
-
-  // 获取用户数据
-  console.log('读取的 token:', token)
-  console.log('读取的 mockUsers:', mockUsers)
-  console.log('读取的 user:', user)
-
-  const getUser = localStorage.getItem('user')
-  if (getUser) {
+  // 更新个人资料
+  const updatedProfil = async (profileData) => {
+    loading.value = true
     try {
-      user.value = JSON.parse(getUser)
-      console.log('读取的 user:',user.value)
+      // 更新用户信息方法的调用
+      const res = await userApi.updateUserInfo(profileData)
+
+      if (res.code === 0) {
+        // 更新 userStored 的状态
+        userInfo.value = res.data // 合并userInfo和res
+      }
+
+      // 将合并的userInfo存储入localStorage
+      localStorage.setItem('userInfo', JSON.stringify(res.data))
+
+      ElMessage.success('个人资料更新成功')
+      return true
     } catch (error) {
-      console.error('解析用户信息失败:', error)
-      // 如果解析失败，清除无效数据
-      localStorage.removeItem('user')
-      localStorage.removeItem('token')
-      user.value = null
-      token.value = ''
+      ElMessage.error(error.message || '资料更新失败')
+      return false
+    } finally {
+      loading.value = false
     }
-  } else {
-    console.log('没有找到用户信息')
   }
 
+  // 上传头像
+  const uploadAvatar = async (file) => {
+    loading.value = true
+    try {
+      const res = await userApi.uploadAvatar(file)
+      if (res.code === 0) {
+        // 更新头像URL
+        const avatarUrl = res.data.url
+
+        // 更新头像信息至api,更新用户信息
+        const updateRes = await userApi.updateUserInfo({
+          avatar_img: avatarUrl
+        })
+
+        if (updateRes.code === 0) {
+          userInfo.value = updateRes.data
+        }
+
+        // 将更新的userInfo存储入localStorage
+        localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+
+        ElMessage.success('头像上传成功')
+        console.log('avatar_img:', userInfo.value.avatar_img);
+
+        return res.data.url
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '头像上传失败')
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 修改密码
+  const changePassword = async (newPassword) => {
+    loading.value = true
+    try {
+      const res = await userApi.changePassword(newPassword)
+
+      if (res.code === 0) {
+        ElMessage.success('密码修改成功成功')
+        return true
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '密码修改失败')
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 登录方法的调用
+  const login = async loginData => {
+    loading.value = true
+    try {
+      const res = await userApi.login(loginData)
+      if (res.code === 0) {
+        userInfo.value = res.data.user
+        token.value = res.data.token
+        localStorage.setItem('token', token.value)
+        localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+        console.log('store的登录方法成功调用');
+        return true
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '登录失败')
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 注册方法的调用
+  const register = async registrationData => {
+    loading.value = true
+    try {
+      const res = await userApi.register(registrationData)
+      console.log('处理注册要求已上传到API,请求res：', res.code);
+      if (res.code === 0) {
+        ElMessage.success('注册成功')
+        return true
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '注册失败')
+      console.log('注册失败的原因：', error);
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 退出用户登录
+  const removeToken = () => {
+    userInfo.value = null
+    token.value = ''
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+    ElMessage.success('已退出登录')
+  }
+
+  const isAuthenticated = computed(() => !!token.value && !!userInfo.value)
+  const username = computed(() => userInfo.value?.username || '')
+  const avatar = computed(() => userInfo.value?.avatar || '')
   return {
-    user,
+    userInfo,
     token,
-    isAuthenticated: token.value ? true : false,
+    loading,
+
+    isAuthenticated,
+    username,
+    avatar,
+
     login,
     register,
-    getUser,
-    mockUsers
+    removeToken,
+
+    initUserInfo,
+    updatedProfil,
+    uploadAvatar,
+    changePassword
   }
 })

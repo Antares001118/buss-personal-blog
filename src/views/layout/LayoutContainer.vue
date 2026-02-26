@@ -1,30 +1,69 @@
 <script setup>
 import { onMounted } from 'vue'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { CaretBottom, User, EditPen, SwitchButton } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
+const router = useRouter()
 const userStore = useUserStore()
-const circleUrl = ref('https://img2.baidu.com/it/u=2519562163,3079643511&fm=253&app=138&f=JPEG?w=800&h=1067')
+userStore.initUserInfo()
+
+const defaultAvatar = ref('https://wx2.sinaimg.cn/mw2000/a49b2405gy1i8ukcu60rvj22b91qg1kx.jpg')
 
 onMounted(() => {
   // 组件加载时，Store 已自动从 localStorage 恢复数据
-  console.log('当前用户:', userStore.user)
+  console.log('完整的', userStore)
+  console.log('当前用户:', userStore.userInfo)
   console.log('当前 token:', userStore.token)
-
-  // 如果需要，可以手动刷新数据
-  // userStore.restoreFromLocalStorage()
 })
+
+// 处理下拉菜单点击
+const handleCommand = async command => {
+  if (command === 'logout') {
+    // 退出操作
+    await ElMessageBox.confirm('您确认要退出么', '温馨提示', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    // 清除本地user数据
+    userStore.removeToken()
+    console.log('已清除本地token');
+    router.push('/login')
+  } else {
+    // 跳转到对应的页面
+    router.push(`/user/${command}`)
+
+  }
+}
 </script>
 <template>
   <div class="common-layout">
     <header>
       <div class="header-top">
-        <div>欢迎<strong>{{ userStore.user.username }}</strong>来到的BUSS个人博客</div>
-        <div class="block">
-          <el-avatar
-          :size="35"
-          :src="circleUrl">
-        </el-avatar>
-        </div>
+        <div>欢迎<strong>{{ userStore.userInfo?.username }}</strong>来到的BUSS个人博客</div>
+        <el-dropdown  @command="handleCommand">
+          <!-- 头像 -->
+          <div class="el-dropdown-box">
+            <el-avatar
+            :size="40"
+            :src="userStore.userInfo?.avatar_img || defaultAvatar"
+            >
+            </el-avatar>
+            <el-icon><CaretBottom /></el-icon>
+          </div>
+
+          <!-- 头像折叠的下拉部分 -->
+           <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile" :icon="User">查看个人资料</el-dropdown-item>
+              <el-dropdown-item command="change" :icon="EditPen">更改个人资料</el-dropdown-item>
+              <el-dropdown-item command="logout" :icon="SwitchButton">退出登录账户</el-dropdown-item
+              >
+            </el-dropdown-menu>
+           </template>
+        </el-dropdown>
       </div>
     </header>
     <main><router-view></router-view></main>
@@ -34,6 +73,9 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .common-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   header {
     width: 100%;
     height: 80vh;
@@ -47,22 +89,34 @@ onMounted(() => {
       justify-content: space-between;
       align-items:center;
       color: #fff;
-        div {
-            padding: 0 20px;
+      div {
+        padding: 0 20px;
+      }
+      .el-dropdown-box {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        .el-avatar {
+          border: 1px solid transparent;
         }
+        .el-icon {
+          padding-left: 10px;
+          color: #fff
+        }
+      }
     }
   }
   main {
+    flex: 1;
     height: 550px;
   }
   footer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding-top: 10px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
     font-size: 14px;
     color: #666;
     }
-
-
 }
 </style>

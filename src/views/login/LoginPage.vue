@@ -3,9 +3,11 @@ import{ ref, toRaw  } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 
-// 1.2. 获取  和 store 实例
+// 1.2. 获取 router 和 store 实例
 const userStore = useUserStore()
+const router = useRouter()
 
 // 1.3. 定义响应式数据
 const isLogin = ref(true)
@@ -58,26 +60,26 @@ const rules = {
 const handleLogin = async () => {
   // 重置错误信息
   error.value = ''
-
   try {
     // 简单的前段验证
     await form.value.validate()
     // 1.5. 核心调用： 调用store的login方法
-    const result = await userStore.login({
-      formModel: formModel.value
+    const success = await userStore.login({
+        username: formModel.value.username,
+        password: formModel.value.password
     })
     // 1.6. 根据结果处理
-    if (result.success) {
+    if (success) {
       ElMessage.success('登录成功')
+      router.push('/')
     } else {
       // 登录失败
-      error.value = result.error || '登录失败'
-      ElMessage.success('登录失败')
+      error.value = success.error || '登录失败'
     }
-  } catch (err) {
+  } catch (error) {
     // 捕获未预期的错误
     error.value = '登录过程出错，请重试'
-    console.error('登录错误:', err)
+    console.error('登录错误:', error)
   }
 }
 
@@ -87,11 +89,15 @@ const handleRegister = async () => {
   try {
     await form.value.validate()
     const result = await userStore.register({
-      formModel: toRaw(formModel)
+      username: formModel.value.username,
+      password: formModel.value.password
+      // 注意：confirmPassword 不需要传递给API
     })
-    console.log('formModel传达：',formModel);
-    if (result.success) {
+        console.log('formModel传达：',formModel);
+    if (result) {
+      console.log('处理注册要求已上传到store')
       ElMessage.success('注册成功')
+      isLogin.value = true
     } else {
       // 注册失败
       error.value = result.error || '注册失败'
@@ -99,7 +105,6 @@ const handleRegister = async () => {
   } catch (err){
     error.value = '注册失败，请重试'
     console.log('注册错误', err)
-
   }
 }
 </script>
