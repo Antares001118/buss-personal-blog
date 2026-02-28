@@ -1,5 +1,5 @@
 <script setup>
-import{ ref, toRaw  } from 'vue'
+import{ ref  } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
@@ -64,22 +64,24 @@ const handleLogin = async () => {
     // 简单的前段验证
     await form.value.validate()
     // 1.5. 核心调用： 调用store的login方法
-    const success = await userStore.login({
-        username: formModel.value.username,
-        password: formModel.value.password
+    const result = await userStore.login({
+      username: formModel.value.username,
+      password: formModel.value.password
     })
+    console.log('result：', result);
+
     // 1.6. 根据结果处理
-    if (success) {
+    if (result) {
       ElMessage.success('登录成功')
       router.push('/')
     } else {
       // 登录失败
-      error.value = success.error || '登录失败'
+      ElMessage.error('登录失败1')
     }
-  } catch (error) {
+  } catch (e) {
     // 捕获未预期的错误
-    error.value = '登录过程出错，请重试'
-    console.error('登录错误:', error)
+    e.value = '登录过程出错，请重试'
+    console.log('登录错误:', e)
   }
 }
 
@@ -147,10 +149,18 @@ const handleRegister = async () => {
         <el-input v-model="formModel.username" :prefix-icon="User" placeholder="请输入用户名"/>
       </el-form-item>
       <el-form-item prop="password">
-        <el-input v-model="formModel.password" :prefix-icon="Lock" placeholder="请输入密码"/>
+        <el-input
+        v-model="formModel.password"
+        type="password"
+        :prefix-icon="Lock"
+        placeholder="请输入密码"/>
       </el-form-item>
       <el-form-item prop="confirmPassword">
-        <el-input v-model="formModel.confirmPassword" :prefix-icon="Lock" placeholder="请输入再次密码"/>
+        <el-input
+        v-model="formModel.confirmPassword"
+        type="password"
+        :prefix-icon="Lock"
+        placeholder="请输入再次密码"/>
       </el-form-item>
       <el-form-item>
         <el-button @click="handleRegister" color="#909399"><span style="color: aliceblue;">注册</span></el-button>

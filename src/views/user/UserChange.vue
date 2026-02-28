@@ -4,12 +4,16 @@ import useComponent from '@/views/user/component/UseComponent.vue'
 import { useUserStore } from '@/stores/user'
 import { Camera } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
 
 const userStore = useUserStore()
 const userFormRef = ref(null)
 const passwordFormRef = ref(null)
 const fileInput = ref(null)
 const uploading = ref(false)
+const pswStrength = ref('')
+const strengthClass = ref('')
 
 // 表单数据
 const UserForm = ref({
@@ -18,7 +22,9 @@ const UserForm = ref({
 
 // 密码表单
 const passwordForm = ref({
+  oldPassword: '',
   newPassword: '',
+  confirmPassword: ''
 })
 
 
@@ -32,14 +38,56 @@ const UserFormRules = {
 
 // 密码验证规则
 const passwordFormRules = {
-    newPassword: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
+  oldPassword: [
+    { required: true, message: '请输入原密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
     {
       pattern: /^\S{6,15}$/,
       message: '密码必须是 6-15位 的非空字符',
       trigger: 'blur'
     }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur'},
+    {
+      pattern: /^\S{6,15}$/,
+      message: '密码必须是 6-15位 的非空字符',
+      trigger: 'blur'
+    },
+    {
+      validator: (rule, value, callback) => {
+        // 判断value和当前form中的password是否一致
+        if (value !== passwordForm.value.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback() // 就算校验成功，也需要callback
+        }
+      },
+      trigger: 'blur'
+    }
   ]
+}
+
+// 检查密码强度
+const checkpswStrength = (psw) => {
+  if (!psw) return { text: '', level: 'weak' }
+  let score = 0
+  if (psw) score += 1
+  if (/[A-Z]/.test(psw)) score++
+  if (/[0-9]/.test(psw)) score++
+  if (/[^A-Za-z0-9]/.test(psw)) score++
+  if (score >= 3) return { text: '强', level: 'strong' }
+  if (score >= 2) return { text: '中', level: 'medium' }
+  return { text: '弱', level: 'weak' }
+}
+
+// 更新密码强度
+const updatePasswordStrength = (psw) => {
+  const strength = checkpswStrength(psw)
+  pswStrength.value = strength.text
+  strengthClass.value = strength.level
 }
 
 // 加载用户信息
@@ -77,19 +125,33 @@ const submitNameForm = async () => {
 
 // 提交新的密码
 const submitPswForm = async () => {
-  await passwordFormRef.value?.validate(async (valid) => {
-    if(!valid) return
+  try {
+    await passwordFormRef.value?.validate(async (valid) => {
+      if(!valid) return
 
-    const submitPswData = await userStore.changePassword(
-      passwordForm.value.newPassword
-    )
+    await ElMessageBox.confirm('确定要修改密码吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
 
-    if (submitPswData) {
-      // 清空密码表单
-      passwordForm.value.newPassword = '',
-      passwordFormRef.value?.clearValidate()
-    }
-  })
+      const submitPswData = await userStore.changePassword(
+        passwordForm.value.oldPassword,
+        passwordForm.value.newPassword
+      )
+
+      if (submitPswData) {
+        // 清空密码表单
+        passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' },
+        passwordFormRef.value?.clearValidate()
+        ElMessage.success('密码修改成功')
+      } else {
+      ElMessage.error('密码修改失败')
+      }
+    })
+  } catch (error) {
+    if (error !== 'cancel') console.log('用户取消操作')
+  }
 }
 
 /* // 将图片转变为base64
@@ -164,8 +226,8 @@ const handleAvatarChange = async (event) => {
             :model="UserForm"
             :rules="UserFormRules"
             >
-              <el-form-item label="更改昵称" prop="currentUsername">
-                <el-input  v-model="UserForm.username"  placeholder="请输入新用户名"/>
+              <el-form-item label="新昵称" prop="username"  label-width="125px">
+                <el-input v-model="UserForm.username" :prefix-icon="User" placeholder="请输入新用户名"/>
               </el-form-item>
               <el-form-item>
                 <el-button
@@ -173,7 +235,7 @@ const handleAvatarChange = async (event) => {
                   @click="submitNameForm"
                   :loading="userStore.loading"
                 >
-                  保存修改
+                  修改昵称
                 </el-button>
               </el-form-item>
             </el-form>
@@ -188,12 +250,38 @@ const handleAvatarChange = async (event) => {
             :model="passwordForm"
             :rules="passwordFormRules"
             >
-              <el-form-item label="新密码" prop="newPassword">
-                <el-input v-model="passwordForm.newPassword" placeholder="请输入新的密码"/>
+              <el-form-item label="旧密码" prop="oldPassword" label-width="125px">
+                <el-input
+                v-model="passwordForm.oldPassword"
+                placeholder="请输入旧密码"
+                :prefix-icon="Lock"
+                type="password"
+                width="200px"/>
+              </el-form-item>
+              <el-form-item label="新密码" prop="newPassword" label-width="125px">
+                <el-input
+                v-model="passwordForm.newPassword"
+                placeholder="请输入新的密码"
+                @input="updatePasswordStrength"
+                :prefix-icon="Lock"
+                type="password">
+                <template #suffix>
+                  <span v-if="pswStrength" :class="['strength', strengthClass]">
+                    {{ pswStrength }}
+                  </span>
+                </template>
+              </el-input>
+              </el-form-item>
+              <el-form-item label="再次输入新密码" prop="confirmPassword" label-width="125px">
+                <el-input
+                v-model="passwordForm.confirmPassword"
+                placeholder="请再次输入新的密码"
+                :prefix-icon="Lock"
+                type="password"/>
               </el-form-item>
               <el-form-item>
                 <el-button
-                  type="danger"
+                  type="primary"
                   @click="submitPswForm"
                   :loading="userStore.loading"
                 >
@@ -209,5 +297,20 @@ const handleAvatarChange = async (event) => {
 <style lang="scss" scoped>
 .el-card {
   height: 600px;
+  .strength {
+    font-size: 12px;
+    margin-right: 5px;
+    transition: color 0.3s;
+    &.strong {
+      color: #67c23a;
+    }
+    &.medium {
+      color: #e6a23c;
+    }
+    &.weak {
+      color: #f56c6c;
+    }
+  }
 }
+
 </style>

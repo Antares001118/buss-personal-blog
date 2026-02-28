@@ -41,10 +41,10 @@ const generateToken = (userId) => {
 export const userApi = {
   // 获取用户信息
   getUserInfo(token) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         if(!token) {
-          reject({
+          resolve({
             code:101,
             message: '未登录'
           })
@@ -56,7 +56,7 @@ export const userApi = {
         const user = users.find(u => u.id === Number(userId))
 
         if (!user) {
-          reject({
+          resolve({
             code: 102,
             message: '用户不存在'
           })
@@ -80,7 +80,8 @@ export const userApi = {
       setTimeout(() => {
         const currentUser = getCurrentUser()
         const updatedUser = { ...currentUser, ...userData } // 合并（覆盖）新旧数据
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser))
+        const { password: _, ...userWithoutPassword } = updatedUser
+        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword))
 
         // 同时更新 users 列表中的用户信息
         const users = getUsersFromStorage()
@@ -89,7 +90,7 @@ export const userApi = {
           users[userIndex] = updatedUser
           saveUsers(users)
         }
-        resolve({ code: 0, data: updatedUser }) // data: updatedUser：更新后的用户数据
+        resolve({ code: 0, data: userWithoutPassword }) // data: userWithoutPassword：更新后不含密码的用户数据
       }, 500)
     })
   },
@@ -106,20 +107,31 @@ export const userApi = {
   },
 
   // 修改密码
-  changePassword(newPassword) {
+  changePassword(oldPassword, newPassword) {
     return new Promise((resolve) => {
       setTimeout(() => {
         const currentUser = getCurrentUser()
-        const users = getUsersFromStorage()
 
-        const userIndex = users.findIndex(u => u.id === currentUser.id)
-        if (userIndex === -1) {
-          resolve({ code: 1, message: '用户不存在' })
+        // 1. 获取用户数据
+        const users = getUsersFromStorage()
+        const user = users.find(u => u.id === currentUser.id)
+
+        if (!user) {
+          resolve({ code: 102, message: '用户不存在' })
           return
         }
 
-        users[userIndex].password = newPassword
+        // 2. 验证原密码
+        if (user.password !== oldPassword) {
+          resolve({ code: 105, message: '原密码错误' })
+          return
+        }
+
+        // 3. 更新密码
+        user.password = newPassword
         saveUsers(users)
+
+        // 4. 更新存储
         const updatedUser = { ...currentUser, password: newPassword }
         localStorage.setItem('currentUser', JSON.stringify(updatedUser))
         resolve({ code: 0, message: '密码修改成功' })
@@ -132,10 +144,18 @@ export const userApi = {
     return new Promise((resolve) => {
       setTimeout(() => {
         const { username, password } = registrationData
-        console.log('API注册层已接收到注册请求');
 
         // 1. 获取现有用户
         const users = getUsersFromStorage()
+
+        const existingUser = users.find(u => u.username === username)
+        if (existingUser) {
+          resolve({
+            code: 104,
+            message: '用户已存在'
+          })
+          return
+        }
 
         // 2. 创建新用户5rt4
         const newUser = {
@@ -163,7 +183,7 @@ export const userApi = {
 
   // 简单登录
   login(loginData) {
-    return new Promise((resolve,reject) => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         const { username, password } = loginData
 
@@ -173,7 +193,7 @@ export const userApi = {
 
         // 2.1 验证用户
         if (!user) {
-          reject ({
+          resolve({
             code: 102,
             message: '用户不存在'
           })
@@ -181,7 +201,7 @@ export const userApi = {
         }
         // 2.2 验证密码
         if (user.password !== password) {
-          reject({
+          resolve({
             code: 103,
             message: '密码错误'
           })

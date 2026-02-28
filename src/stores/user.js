@@ -83,14 +83,17 @@ export const useUserStore = defineStore('User', () => {
   }
 
   // 修改密码
-  const changePassword = async (newPassword) => {
+  const changePassword = async (oldPassword, newPassword) => {
     loading.value = true
     try {
-      const res = await userApi.changePassword(newPassword)
+      const res = await userApi.changePassword(oldPassword, newPassword)
 
       if (res.code === 0) {
-        ElMessage.success('密码修改成功成功')
+        ElMessage.success('密码修改成功')
         return true
+      } else {
+        ElMessage.error(res.message || '密码修改失败')
+        return false
       }
     } catch (error) {
       ElMessage.error(error.message || '密码修改失败')
@@ -102,16 +105,21 @@ export const useUserStore = defineStore('User', () => {
 
   // 登录方法的调用
   const login = async loginData => {
+    console.log('已进入store层');
+
     loading.value = true
     try {
       const res = await userApi.login(loginData)
       if (res.code === 0) {
+        console.log('调取登录API成功');
         userInfo.value = res.data.user
         token.value = res.data.token
         localStorage.setItem('token', token.value)
         localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
         console.log('store的登录方法成功调用');
         return true
+      } else {
+        console.log('调取登录API失败');
       }
     } catch (error) {
       ElMessage.error(error.message || '登录失败')
