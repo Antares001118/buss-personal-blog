@@ -62,7 +62,7 @@ const goAddBlog = () => {
     .el-button {
       width: 100%;
       height: 120px;
-      background-color: #cdcdcd;
+      background-color: #A9AAC6;
       font-size: large;
     }
     .el-button:hover {

@@ -74,10 +74,10 @@ const passwordFormRules = {
 const checkpswStrength = (psw) => {
   if (!psw) return { text: '', level: 'weak' }
   let score = 0
-  if (psw) score += 1
-  if (/[A-Z]/.test(psw)) score++
-  if (/[0-9]/.test(psw)) score++
-  if (/[^A-Za-z0-9]/.test(psw)) score++
+  if (psw.length >= 6) score += 1
+  if (/[A-Z]/.test(psw)) score += 1
+  if (/[0-9]/.test(psw)) score += 1
+  if (/[^A-Za-z0-9]/.test(psw)) score += 1
   if (score >= 3) return { text: '强', level: 'strong' }
   if (score >= 2) return { text: '中', level: 'medium' }
   return { text: '弱', level: 'weak' }

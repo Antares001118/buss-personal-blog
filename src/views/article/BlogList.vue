@@ -65,7 +65,9 @@ const PageData = computed(() => {
     <div class="blogList">
       <el-table
         :data="PageData"
-        stripe style="width: 100%; max-height: 100%;">
+        stripe
+        style="width: 100%; max-height: 100%;"
+        >
           <el-table-column prop="iamge" label="image" width="100" >
             <template #default="scope">
               <img
@@ -86,6 +88,7 @@ const PageData = computed(() => {
             </template>
           </el-table-column>
       </el-table>
+      <el-empty v-show="PageData.length < 3" description="暂无更多数据" />
       <div class="pagination-block">
         <el-pagination
         :total="BlogListData.length"
@@ -99,6 +102,7 @@ const PageData = computed(() => {
 </template>
 <style lang="scss" scoped>
 .blogList {
+  position: relative;
   height: 600px;
   .el-button {
     opacity: .7;
@@ -108,7 +112,11 @@ const PageData = computed(() => {
     background-color: #f5f5f5;
   }
   .pagination-block {
-    margin-top: 5px;
-}
+    position: absolute;
+    bottom: 10px;
+  }
+  .el-empty {
+    height: auto;
+  }
 }
 </style>

@@ -12,15 +12,24 @@ const router = useRouter()
 // 1.3. 定义响应式数据
 const isLogin = ref(true)
 const error = ref('')
-const form = ref()
+const loginForm = ref()
+const registerForm = ref()
 
-// 2.1 form数据对象
+// 2.1 Form数据对象
 const formModel = ref({
   username: '',
   password: '',
   confirmPassword: ''
 })
 
+// 清理form对象
+const clearForm = () => {
+  formModel.value = {
+    username: '',
+    password: '',
+    confirmPassword: ''
+  }
+}
 // 2.2 校验规则
 const rules = {
   username: [
@@ -62,14 +71,12 @@ const handleLogin = async () => {
   error.value = ''
   try {
     // 简单的前段验证
-    await form.value.validate()
+    await loginForm.value.validate()
     // 1.5. 核心调用： 调用store的login方法
     const result = await userStore.login({
       username: formModel.value.username,
       password: formModel.value.password
     })
-    console.log('result：', result);
-
     // 1.6. 根据结果处理
     if (result) {
       ElMessage.success('登录成功')
@@ -89,13 +96,13 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   // 2.2 校验注册规则
   try {
-    await form.value.validate()
+    await registerForm.value.validate()
     const result = await userStore.register({
       username: formModel.value.username,
       password: formModel.value.password
       // 注意：confirmPassword 不需要传递给API
     })
-        console.log('formModel传达：',formModel);
+        console.log('RegisterFormModel传达：', formModel);
     if (result) {
       console.log('处理注册要求已上传到store')
       ElMessage.success('注册成功')
@@ -109,42 +116,57 @@ const handleRegister = async () => {
     console.log('注册错误', err)
   }
 }
+
+const changeISlogin = () => {
+  isLogin.value = !isLogin.value
+  clearForm()
+}
 </script>
 
 <template>
-  <div class="login-bg">
-    <div class="login-banner">
-      <img src="/src/assets/login-banner.jpg" alt="" class="login-banne-img">
-    </div>
-    <el-form
-    :model="formModel"
-    :rules="rules"
-    ref="form"
-    label-width="auto"
-    style="max-width: 300px"
-    v-if="isLogin">
-      <el-form-item prop="username">
-        <el-input v-model="formModel.username" :prefix-icon="User" placeholder="请输入用户名"/>
-      </el-form-item>
-      <el-form-item prop="password">
-        <el-input v-model="formModel.password" :prefix-icon="Lock" placeholder="请输入密码"/>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleLogin" color="#909399"><span style="color: aliceblue;">登录</span></el-button>
-        <el-button>取消</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-link type="info" underline="hover"  @click="isLogin=false">没有账号？去注册→</el-link>
-      </el-form-item>
-    </el-form>
-    <el-form
+  <div class="handle-container">
+    <el-card>
+      <div class="handle-cardLeft">
+        <div class="brand"><h1>您好呀，我们一起来看看吧</h1></div>
+        <div class="illustration"><img src="/src/assets/handle.jpg" alt=""></div>
+      </div>
+      <div class="handle-cardRight">
+        <div class="handle-header">
+          <h2>{{ isLogin ? "登录账号" : "注册账号" }}</h2>
+        </div>
+        <el-form
+        :model="formModel"
+        :rules="rules"
+        ref="loginForm"
+        label-width="auto"
+        v-if="isLogin">
+          <el-form-item prop="username">
+            <el-input v-model="formModel.username" :prefix-icon="User" placeholder="请输入用户名"/>
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+            v-model="formModel.password"
+            type="password"
+            :prefix-icon="Lock"
+            placeholder="请输入密码"/>
+          </el-form-item>
+          <el-form-item>
+            <el-button @click="handleLogin" color="#909399"><span style="color: aliceblue;">登录</span></el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-link type="info" underline="hover"  @click="changeISlogin">没有账号？去注册→</el-link>
+          </el-form-item>
+        </el-form>
+        <el-form
       :model="formModel"
       :rules="rules"
-      ref="form"
+      ref="registerForm"
       label-width="auto"
-      style="max-width: 300px"
       v-else
       >
+      <el-form-item>
+        <el-link type="info" underline="hover" @click="changeISlogin">←已有账号，返回登录</el-link>
+      </el-form-item>
       <el-form-item prop="username">
         <el-input v-model="formModel.username" :prefix-icon="User" placeholder="请输入用户名"/>
       </el-form-item>
@@ -165,33 +187,80 @@ const handleRegister = async () => {
       <el-form-item>
         <el-button @click="handleRegister" color="#909399"><span style="color: aliceblue;">注册</span></el-button>
       </el-form-item>
-    </el-form>
+        </el-form>
+      </div>
+    </el-card>
     </div>
 </template>
 <style lang="scss" scoped>
-.login-bg {
-  height: 100vh;
-  background-color:#1C2331 ;
-  .login-banner {
-      width: 1200px;
-      height: 400px;
-      margin: 20px auto;
-      overflow: hidden;
-      object-fit: cover;
-    .login-banne-img{
-      width: 100%;
+.handle-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #81B5D8 0%, #EBC3D5 100%);
+  padding: 20px;
+  .el-card {
+    width: 1000px;
+    max-width: 100%;
+    background: white;
+    overflow: hidden;
+    border-radius: 20px;
+    .handle-cardLeft {
+      min-height: 300px;
+      background: linear-gradient(135deg, #53302a 0%, #81B5D8 100%);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      .brand h1 {
+        color: white;
+        font-size: 2rem;
+        margin-bottom: 5px;
+        font-weight: 600;
+      }
+      .illustration {
+        flex: 1;
+        max-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-top: 30px;
+        border-radius: 10px;
+        background: #f0f0f0;
+        img {
+          width: 100%;
+          object-fit: cover;
+          object-position: center
+        }
+      }
+      .illustration:hover {
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+      }
     }
-  }
-  .el-form {
-    border: 3px dotted rgba(255, 255, 255, 0.5);
-    margin: 60px auto;
-    padding:20px 30px;
-    .el-link {
-      font-size: smaller;
+    .handle-cardRight {
+      flex: 1;
+      padding: 20px;
+      background: white;
+      .handle-header {
+        margin-bottom: 20px;
+        .handle-header h2 {
+          font-size: 2rem;
+          color: #333;
+          margin-bottom: 5px;
+        }
+      }
+      .el-form {
+        .el-form-item {
+          margin-bottom: 20px;
+        }
+      }
     }
   }
 }
-
 
 
 </style>

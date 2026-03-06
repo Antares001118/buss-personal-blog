@@ -166,9 +166,9 @@ const formatDate = (date) => {
       <!-- 分类 -->
       <el-form-item label="分类" prop="classify">
         <el-select v-model="form.classify" placeholder="请选择分类">
-          <el-option label="Self-Awareness" value="Self-Awareness" />
-          <el-option label="Vitality" value="Vitality" />
-          <el-option label="Lonely yet brave" value="Lonely yet brave" />
+          <el-option label="experience" value="experience" />
+          <el-option label="knowledge" value="knowledge" />
+          <el-option label="thought" value="thought" />
         </el-select>
       </el-form-item>
       <el-form-item label="博客封面" prop="cover_img" >

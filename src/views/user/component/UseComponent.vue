@@ -1,5 +1,5 @@
 <script setup>
-import { User, EditPen } from '@element-plus/icons-vue'
+import { User, EditPen, House } from '@element-plus/icons-vue'
 </script>
 
 <template>
@@ -12,6 +12,10 @@ import { User, EditPen } from '@element-plus/icons-vue'
         :default-active="$route.path"
         style="height: 600px;overflow-y: auto;padding-top: 30px;"
         router>
+        <el-menu-item index="/">
+          <el-icon><House /></el-icon>
+          <span>回到主页</span>
+        </el-menu-item>
         <el-menu-item index="/user/profile">
           <el-icon><User /></el-icon>
           <span>个人资料</span>

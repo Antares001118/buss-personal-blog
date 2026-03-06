@@ -17,7 +17,7 @@ request.interceptors.request.use(config => {
 })
 
 // 响应拦截器
-request.interceptors.request.use(
+request.interceptors.response.use(
   response => response.data,
   error => {
     if (error.response?.status === 401) {
