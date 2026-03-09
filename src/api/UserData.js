@@ -28,7 +28,9 @@ const saveUsers = (users) => {
 
 // 从 localStorage 获取当前用户信息
 const getCurrentUser = () => {
-  const userStored = localStorage.getItem('currentUser')
+  const userStored = localStorage.getItem('userInfo')
+  console.log('CurrentUser(userInfo):', userStored);
+
   return userStored ? JSON.parse(userStored) : null
 }
 
@@ -63,7 +65,7 @@ export const userApi = {
           return
         }
 
-        const { password: _, ...userWithoutPassword } = user
+        const { password, ...userWithoutPassword } = user
 
         resolve({
           code: 0,
@@ -111,6 +113,7 @@ export const userApi = {
     return new Promise((resolve) => {
       setTimeout(() => {
         const currentUser = getCurrentUser()
+        console.log('currentUser.id:', currentUser.id);
 
         // 1. 获取用户数据
         const users = getUsersFromStorage()
@@ -143,12 +146,11 @@ export const userApi = {
   register(registrationData) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        const { username, password } = registrationData
 
         // 1. 获取现有用户
         const users = getUsersFromStorage()
 
-        const existingUser = users.find(u => u.username === username)
+        const existingUser = users.find(u => u.username === registrationData.username)
         if (existingUser) {
           resolve({
             code: 104,
@@ -157,11 +159,10 @@ export const userApi = {
           return
         }
 
-        // 2. 创建新用户5rt4
+        // 2. 创建新用户
         const newUser = {
           id: Date.now(),
-          username,
-          password,
+          ...registrationData,
           avatar_img: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png',
           createdAt: new Date().toISOString()
         }
@@ -170,12 +171,18 @@ export const userApi = {
         users.push(newUser)
         saveUsers(users)
 
-        // 4. 返回成功（不返回密码）
-        const { password: _, ...userWithoutPassword } = newUser
+        // **4. 自动登录
+        const token = generateToken(newUser.id)
+
+        // 5. 返回成功（不返回密码）
+        const { password, ...userWithoutPassword } = newUser
         resolve({
           code: 0,
-          data: userWithoutPassword,
-          message: '注册成功'
+          data: {
+            user: userWithoutPassword,
+            token: token
+          },
+          message: '注册并登录成功'
         })
       }, 300)
     })
@@ -185,11 +192,10 @@ export const userApi = {
   login(loginData) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        const { username, password } = loginData
 
         // 1. 获取用户
         const users = getUsersFromStorage()
-        const user = users.find(u => u.username === username)
+        const user = users.find(u => u.username === loginData.username)
 
         // 2.1 验证用户
         if (!user) {
@@ -200,7 +206,7 @@ export const userApi = {
           return
         }
         // 2.2 验证密码
-        if (user.password !== password) {
+        if (user.password !== loginData.password) {
           resolve({
             code: 103,
             message: '密码错误'
@@ -212,14 +218,12 @@ export const userApi = {
         const token = generateToken(user.id)
 
         // 4. 返回用户信息（不返回密码）和token
-        const { password: _, ...userWithoutPassword } = user
-        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword))
-        console.log('已保存 currentUser:', userWithoutPassword)
+        const { password, ...userWithoutPassword } = user
         resolve({
           code: 0,
           data: {
             user: userWithoutPassword,
-            token
+            token: token
           },
           message: '登录成功'
         })

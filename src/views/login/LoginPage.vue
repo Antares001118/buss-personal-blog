@@ -102,11 +102,10 @@ const handleRegister = async () => {
       password: formModel.value.password
       // 注意：confirmPassword 不需要传递给API
     })
-        console.log('RegisterFormModel传达：', formModel);
+    console.log('RegisterFormModel传达：', formModel);
     if (result) {
-      console.log('处理注册要求已上传到store')
-      ElMessage.success('注册成功')
-      isLogin.value = true
+      console.log('注册成功')
+      router.push('/')
     } else {
       // 注册失败
       error.value = result.error || '注册失败'

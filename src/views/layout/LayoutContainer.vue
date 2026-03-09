@@ -41,8 +41,12 @@ const handleCommand = async command => {
 <template>
   <div class="common-layout">
     <header>
+      <div class="header-banner">
+        <img src="/src/assets/banner.jpg" alt="banner">
+        <div class="banner-overlay"></div>
+      </div>
       <div class="header-top">
-        <div>欢迎<strong>{{ userStore.userInfo?.username }}</strong>来到的BUSS个人博客</div>
+        <div class="welcome-text">欢迎<strong>{{ userStore.userInfo?.username }}</strong>来到的BUSS个人博客</div>
         <el-dropdown  @command="handleCommand">
           <!-- 头像 -->
           <div class="el-dropdown-box">
@@ -72,40 +76,72 @@ const handleCommand = async command => {
 </template>
 
 <style lang="scss" scoped>
+*{
+  box-sizing: border-box;
+}
 .common-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   header {
-    width: 100%;
-    height: 80vh;
-    background: url('/src/assets/banner.jpg') center/cover;
-    .header-top {
+  width: 100%;
+  height: 80vh;
+  position: relative;
+  overflow: hidden;
+    .header-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-      height: 60px;
-      border-radius: 0 0 10px 10px;
-      background-color: rgba(231, 245, 255,0.3);
+      height: 100%;
+      z-index: 0;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;  /* 铺满，但可能裁剪 */
+      }
+    }
+    .header-top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      width: 100%;
+      height: 70px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
       display: flex;
       justify-content: space-between;
-      align-items:center;
-      color: #fff;
-      div {
-        padding: 0 20px;
+      align-items: center;
+      padding: 0 40px;
+      color: #b4bfff;
+      .welcome-text {
+        font-size: 16px;
+        letter-spacing: 1px;
+        strong {
+        color: #fff;
+        margin: 0 4px;
+      }
       }
       .el-dropdown-box {
         cursor: pointer;
         display: flex;
         align-items: center;
+        padding-right: 20px;
         .el-avatar {
           border: 1px solid transparent;
         }
         .el-icon {
           padding-left: 10px;
-          color: #fff
+          color: #fff;
+          font-size: 25px;
         }
       }
     }
   }
+  header
   main {
     flex: 1;
     height: 550px;

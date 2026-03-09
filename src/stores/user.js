@@ -87,7 +87,6 @@ export const useUserStore = defineStore('User', () => {
     loading.value = true
     try {
       const res = await userApi.changePassword(oldPassword, newPassword)
-
       if (res.code === 0) {
         ElMessage.success('密码修改成功')
         return true
@@ -116,7 +115,6 @@ export const useUserStore = defineStore('User', () => {
         token.value = res.data.token
         localStorage.setItem('token', token.value)
         localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
-        console.log('store的登录方法成功调用');
         return true
       } else {
         console.log('调取登录API失败');
@@ -134,8 +132,14 @@ export const useUserStore = defineStore('User', () => {
     loading.value = true
     try {
       const res = await userApi.register(registrationData)
-      console.log('处理注册要求已上传到API,请求res：', res.code);
       if (res.code === 0) {
+        // 更新状态
+        userInfo.value = res.data.user
+        token.value = res.data.token
+
+        // 持久化存储
+        localStorage.setItem('token', res.data.token)
+        localStorage.setItem('userInfo', JSON.stringify(res.data.user))
         ElMessage.success('注册成功')
         return true
       }
@@ -157,6 +161,32 @@ export const useUserStore = defineStore('User', () => {
     ElMessage.success('已退出登录')
   }
 
+  // 获取当前用户信息
+  const fetchCurrentUser = async () => {
+    if (!token.value) return null
+
+    loading.value = true
+    try {
+      const res = await userApi.getUserInfo(token.value)
+
+      if (res.code === 0) {
+        userInfo.value = res.data
+        localStorage.setItem('userInfo', JSON.stringify(res.data))
+      }
+
+      return res
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 初始化 - 检查登录状态
+  const init = async () => {
+    if (token.value) {
+      await this.fetchCurrentUser()
+    }
+  }
+
   const isAuthenticated = computed(() => !!token.value && !!userInfo.value)
   const username = computed(() => userInfo.value?.username || '')
   const avatar = computed(() => userInfo.value?.avatar || '')
@@ -176,6 +206,8 @@ export const useUserStore = defineStore('User', () => {
     initUserInfo,
     updatedProfil,
     uploadAvatar,
-    changePassword
+    changePassword,
+    fetchCurrentUser,
+    init
   }
 })
